@@ -2,7 +2,9 @@
   "name": "spotify-listen-together",
   "version": "0.4.3",
   "scripts": {
-    "build": "rm -rf ./dist && tsc && cp ./src/public ./dist/src/ -r && browserify -t browserify-css dist/src/index.js -o dist/src/bundle.js",
+    "build": "spicetify-creator",
+    "build-local": "spicetify-creator --out=dist --minify",
+    "watch": "spicetify-creator --watch",
     "pushSpotify": "./scripts/pushSpotify.sh",
     "openMultiSpotify": "./scripts/openMultiSpotify.sh"
   },
@@ -12,7 +14,8 @@
   "dependencies": {
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "socket.io-client": "^4.4.0"
+    "socket.io-client": "^4.4.0",
+    "spicetify-creator": "^1.0.13"
   },
   "devDependencies": {
     "@types/node": "^17.0.4",
@@ -22,6 +25,7 @@
     "browserify-css": "^0.15.0",
     "json": "^11.0.0",
     "nodemon": "^2.0.15",
+    "spicetify-creator": "^1.0.13",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4",
     "watchify": "^4.0.0"
