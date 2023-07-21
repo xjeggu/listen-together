@@ -6,8 +6,7 @@ import { Popup } from './popup';
 import iconSvg from './ListenTogetherIcon';
 import pJson from '../../package.json';
 
-const css = require('../public/ui.css');
-
+import '../css/ui.scss';
 export default class UI {
   bottomInfoContainer: Element | null = null;
 
@@ -118,7 +117,7 @@ export default class UI {
     if (this.ltPlayer.client.connected || this.ltPlayer.client.connecting) {
       this.ltPlayer.client.disconnect();
     } else {
-      this.joinServerPopup((btn, address, name) => {
+      this.joinServerPopup((btn, address, name, autoConnect) => {
         if (btn === 'Host a server') {
           window.location.href =
             'https://heroku.com/deploy?template=https://github.com/FlafyDev/spotify-listen-together-server';
@@ -127,6 +126,7 @@ export default class UI {
           if (!!address && !!name) {
             this.ltPlayer.settingsManager.settings.server = address;
             this.ltPlayer.settingsManager.settings.name = name;
+            this.ltPlayer.settingsManager.settings.autoConnect = autoConnect;
             this.ltPlayer.settingsManager.saveSettings();
             this.ltPlayer.client.connect();
           }
@@ -144,6 +144,8 @@ export default class UI {
         this.requestHostPopup((password) => {
           if (!!password) {
             this.ltPlayer.client.socket?.emit('requestHost', password);
+            this.ltPlayer.settingsManager.settings.password = password;
+            this.ltPlayer.settingsManager.saveSettings();
           }
           Popup.close();
         });
@@ -177,13 +179,19 @@ export default class UI {
   }
 
   private joinServerPopup(
-    callback: (btn: string | null, address: string, name: string) => void,
+    callback: (
+      btn: string | null,
+      address: string,
+      name: string,
+      autoConnect: boolean,
+    ) => void,
   ) {
     let address = '';
     let name = '';
+    let autoConnect = false;
     Popup.create(
       'Listen Together',
-      (btn) => callback(btn, address, name),
+      (btn) => callback(btn, address, name, autoConnect),
       ['Join', 'Host a server'],
       [
         <Popup.Textbox
@@ -202,6 +210,13 @@ export default class UI {
             name = text;
           }}
         />,
+        <Popup.Checkbox
+          label="Autoconnect"
+          defaultChecked={this.ltPlayer.settingsManager.settings.autoConnect}
+          onChange={(checked) => {
+            autoConnect = checked;
+          }}
+        />,
       ],
     );
   }
@@ -214,7 +229,11 @@ export default class UI {
       ['Request'],
       [
         <Popup.Text text="Request host" />,
-        <Popup.Textbox name="Password" onInput={(text) => (password = text)} />,
+        <Popup.Textbox
+          name="Password"
+          defaultValue={this.ltPlayer.settingsManager.settings.password}
+          onInput={(text) => (password = text)}
+        />,
       ],
     );
   }

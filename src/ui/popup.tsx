@@ -1,10 +1,28 @@
 import React from 'react';
 
 const styles = {
-  center: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+  center: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as React.CSSProperties,
   button: {
     height: '32px',
   },
+  flexContainer: {
+    display: 'flex',
+    flexDirection: 'column' as 'column',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '14px', // Add this line to introduce space between items
+  } as React.CSSProperties,
+  flexRow: {
+    display: 'flex',
+    flexDirection: 'row' as 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  } as React.CSSProperties,
 };
 
 export namespace Popup {
@@ -26,25 +44,21 @@ export namespace Popup {
 
     render() {
       return (
-        <tr>
-          <td style={{ paddingBottom: this.props.bottomSpace || 20 }}>
-            <div style={styles.center}>{this.props.name}</div>
-          </td>
-          <td style={{ paddingBottom: this.props.bottomSpace || 20 }}>
-            <div style={styles.center}>
-              <input
-                onInput={(e) => {
-                  if (this.props.onInput)
-                    this.props.onInput(e.currentTarget.value);
-                }}
-                className="main-playlistEditDetailsModal-titleInput"
-                type="text"
-                defaultValue={this.props.defaultValue || ''}
-                placeholder={this.props.example || ''}
-              ></input>
-            </div>
-          </td>
-        </tr>
+        <div style={styles.flexRow}>
+          <div style={styles.center}>{this.props.name}</div>
+          <div style={styles.center}>
+            <input
+              onInput={(e) => {
+                if (this.props.onInput)
+                  this.props.onInput(e.currentTarget.value);
+              }}
+              className="main-playlistEditDetailsModal-titleInput"
+              type="text"
+              defaultValue={this.props.defaultValue || ''}
+              placeholder={this.props.example || ''}
+            ></input>
+          </div>
+        </div>
       );
     }
   }
@@ -62,16 +76,14 @@ export namespace Popup {
 
     render() {
       return (
-        <tr>
-          <td
-            colSpan={2}
-            style={{ paddingBottom: this.props.bottomSpace || 20 }}
-          >
-            <div style={this.props.centered || true ? styles.center : {}}>
-              {this.props.text}
-            </div>
-          </td>
-        </tr>
+        <div
+          style={{
+            ...styles.flexRow,
+            justifyContent: this.props.centered ? 'center' : 'flex-start',
+          }}
+        >
+          {this.props.text}
+        </div>
       );
     }
   }
@@ -89,25 +101,55 @@ export namespace Popup {
     }
 
     render() {
+      const { text, onClick, disabled } = this.props;
+
       return (
-        <tr>
-          <td
-            colSpan={2}
-            style={{ paddingBottom: this.props.bottomSpace || 10 }}
-          >
-            <button
-              className="lt-popup-button"
-              onClick={() => {
-                if (this.props.onClick) this.props.onClick();
-              }}
-              disabled={this.props.disabled}
-            >
-              <span className="lt-popup-text" dir="auto">
-                {this.props.text}
+        <button
+          className="button"
+          data-encore-id="buttonSecondary"
+          onClick={onClick}
+          disabled={disabled}
+        >
+          {text}
+        </button>
+      );
+    }
+  }
+
+  interface CheckboxProps {
+    label: string;
+    onChange?: (checked: boolean) => void;
+    defaultChecked?: boolean;
+    bottomSpace?: number;
+  }
+  export class Checkbox extends React.Component<CheckboxProps, {}> {
+    constructor(props: CheckboxProps) {
+      super(props);
+    }
+
+    render() {
+      return (
+        <div style={{ width: '100%' }} className="x-settings-row">
+          <div className="x-settings-firstColumn">
+            <label data-encore-id="type">{this.props.label}</label>
+          </div>
+          <div className="x-settings-secondColumn">
+            <label className="x-toggle-wrapper">
+              <input
+                className="x-toggle-input"
+                type="checkbox"
+                defaultChecked={this.props.defaultChecked || false}
+                onChange={(e) => {
+                  if (this.props.onChange)
+                    this.props.onChange(e.currentTarget.checked);
+                }}
+              />
+              <span className="x-toggle-indicatorWrapper">
+                <span className="x-toggle-indicator"></span>
               </span>
-            </button>
-          </td>
-        </tr>
+            </label>
+          </div>
+        </div>
       );
     }
   }
@@ -122,49 +164,25 @@ export namespace Popup {
     buttonNames: string[],
     content: JSX.Element[],
   ) {
-    let buttons: JSX.Element[] = [];
-    buttonNames.forEach((btnName) => {
-      buttons.push(
-        <button
-          className="main-buttons-button main-button-secondary main-playlistEditDetailsModal-save"
-          style={styles.button}
-          type="button"
-          onClick={() => {
-            closed(btnName);
-          }}
-        >
-          {btnName}
-        </button>,
-      );
-    });
-
     setTimeout(() => {
       Spicetify.PopupModal.display({
         title: title,
         content: (
           <div style={styles.center}>
-            <table style={{ width: '100%' }}>
-              {content.map((elem) => {
-                return <>{elem}</>;
-              })}
-              <tr>
-                <td colSpan={2}>
-                  <div style={styles.center}>
-                    <table style={{ width: '100%' }}>
-                      <tr>
-                        {buttons.map((btn) => {
-                          return (
-                            <td>
-                              <div style={styles.center}>{btn}</div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-            </table>
+            <div style={styles.flexContainer}>
+              {content}
+              {buttonNames.length > 0 && (
+                <div style={styles.flexRow}>
+                  {buttonNames.map((btnName) => (
+                    <Button
+                      key={btnName}
+                      text={btnName}
+                      onClick={() => closed(btnName)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ) as any,
       });
