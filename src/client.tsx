@@ -70,7 +70,6 @@ export default class Client {
 
       // Try to request host if password is set
       const password = this.ltPlayer.settingsManager.settings.password;
-      console.log(`Password: ${password}`);
       if (password != '') {
         this.socket!.emit('requestHost', password);
       }

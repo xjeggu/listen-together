@@ -1,25 +1,18 @@
 import { LiteEvent } from './liteEvent';
 import LTPlayer from './ltPlayer';
-import {
-  forcePlay,
-  getTrackType,
-  isListenableTrackType,
-  isTrackPaused,
-} from './spotifyUtils';
+import { isTrackPaused } from './spotifyUtils';
 
-interface IOGFunctions {
-  play: any;
-  pause: any;
-  resume: any;
-  seekTo: any;
-  skipToNext: any;
-  skipToPrevious: any;
-  emitSync: any;
-  setVolume: any;
-}
+import {
+  PauseCommand,
+  PlayCommand,
+  ResumeCommand,
+  SeekToCommand,
+  SkipToNextCommand,
+  SkipToPreviousCommand,
+} from './commands';
+import { Command, IOGFunctions } from './interfaces';
 
 export let ogPlayerAPI: IOGFunctions;
-
 export default class Patcher {
   private lastData: any = null;
   constructor(public ltPlayer: LTPlayer) {}
@@ -30,6 +23,12 @@ export default class Patcher {
   }
 
   patchAll() {
+    this.setOGFunctions();
+    this.subscribeToPlayerEvents();
+    this.overridePlayerFunctions();
+  }
+
+  private setOGFunctions() {
     ogPlayerAPI = {
       play: Spicetify.Platform.PlayerAPI.play.bind(
         Spicetify.Platform.PlayerAPI,
@@ -56,157 +55,127 @@ export default class Patcher {
         Spicetify.Platform.PlayerAPI._volume,
       ),
     };
-
-    Spicetify.Platform.PlayerAPI._cosmos.sub(
-      'sp://player/v2/main',
-      (data: any) => {
-        if (!data) return;
-
-        if (this.lastData?.track?.uri !== data?.track?.uri) {
-          console.log(data);
-          this.onTrackChanged.trigger(data?.track?.uri || '');
-        }
-
-        this.lastData = data;
-      },
-    );
-
-    Spicetify.Platform.PlayerAPI._events._emitter.emitSync = (
-      e: any,
-      t: any,
-    ) => {
-      if (this.ltPlayer.client.connected && !this.ltPlayer.isHost) {
-        if (t?.action === 'play' && t?.options?.ltForced !== true) return;
-        if (t?.action === 'pause' && isTrackPaused()) return;
-        if (t?.action === 'resume' && !isTrackPaused()) return;
-      }
-      return ogPlayerAPI.emitSync(e, t);
-    };
-
-    Spicetify.Platform.PlayerAPI.play = (
-      uri: any,
-      origins: any,
-      options: any,
-    ) => {
-      console.log(
-        `Play: uri=${JSON.stringify(uri)}\norigins=${JSON.stringify(
-          origins,
-        )}\noptions=${JSON.stringify(options)}`,
-      );
-      this.restrictAccess(
-        () => ogPlayerAPI.play(uri, origins, options),
-        () => {
-          if (options?.repeat === undefined) {
-            // Don't do anything if the function was executed by what plays the next song.
-            Spicetify.showNotification('Only the hosts can change songs!');
-            if (typeof uri?.uri === 'string') {
-              if (isListenableTrackType(getTrackType(uri.uri)))
-                this.ltPlayer.requestSong(uri.uri);
-              else if (
-                typeof options?.skipTo?.uri === 'string' &&
-                isListenableTrackType(getTrackType(options.skipTo.uri))
-              )
-                this.ltPlayer.requestSong(options.skipTo.uri);
-            }
-          }
-        },
-        () => {
-          this.ltPlayer.muteBeforePlay();
-          ogPlayerAPI.play(uri, origins, options);
-        },
-        this.ltPlayer.isHost || options?.ltForced === true,
-      );
-    };
-
-    Spicetify.Platform.PlayerAPI.pause = () => {
-      this.restrictAccess(
-        () => ogPlayerAPI.pause(),
-        () => Spicetify.showNotification('Only the hosts can pause songs!'),
-        () => {
-          this.ltPlayer.requestUpdateSong(true, Spicetify.Player.getProgress());
-        },
-      );
-    };
-
-    Spicetify.Platform.PlayerAPI.resume = () => {
-      this.restrictAccess(
-        () => ogPlayerAPI.resume(),
-        () => Spicetify.showNotification('Only the hosts can resume songs!'),
-        () => {
-          this.ltPlayer.requestUpdateSong(
-            false,
-            Spicetify.Player.getProgress(),
-          );
-        },
-      );
-    };
-
-    Spicetify.Platform.PlayerAPI.skipToNext = (e: any) => {
-      this.restrictAccess(
-        () => ogPlayerAPI.skipToNext(e),
-        () => Spicetify.showNotification('Only the hosts can change songs!'),
-      );
-    };
-
-    Spicetify.Platform.PlayerAPI.seekTo = (milliseconds: number) => {
-      this.restrictAccess(
-        () => ogPlayerAPI.seekTo(milliseconds),
-        () => Spicetify.showNotification('Only the hosts can seek songs!'),
-        () => {
-          this.ltPlayer.requestUpdateSong(
-            !Spicetify.Player.isPlaying(),
-            milliseconds,
-          );
-        },
-      );
-    };
-
-    Spicetify.Platform.PlayerAPI.skipToPrevious = (e: any) => {
-      this.restrictAccess(
-        () => ogPlayerAPI.skipToPrevious(e),
-        () => Spicetify.showNotification('Only the hosts can change songs!'),
-        () => {
-          if (Spicetify.Player.getProgress() <= 3000)
-            ogPlayerAPI.skipToPrevious(e);
-          else Spicetify.Player.seek(0);
-        },
-      );
-    };
-
-    if (ogPlayerAPI.setVolume)
-      Spicetify.Platform.PlayerAPI._volume.setVolume = (e: number) => {
-        if (!this.ltPlayer.client.connected || this.ltPlayer.canChangeVolume)
-          ogPlayerAPI.setVolume(e);
-      };
-
-    Spicetify.Platform.History.listen(({ pathname }: { pathname?: string }) => {
-      let pathParts = pathname?.split('/', 3).filter((i) => i);
-      if (
-        (pathParts?.length || 0) >= 2 &&
-        pathParts![0].toLowerCase() == 'listentogether'
-      ) {
-        this.ltPlayer.ui.joinAServerQuick(decodeURIComponent(pathParts![1]));
-        Spicetify.Platform.History.goBack();
-      }
-    });
   }
 
-  private restrictAccess(
-    ogFunc: Function,
-    restrictCallback: () => void,
-    hostFunc?: Function,
-    access?: boolean,
-  ) {
-    if (!this.ltPlayer.client.connected && !this.ltPlayer.client.connecting) {
-      ogFunc();
-    } else if (
-      (access !== undefined && access) ||
-      (access === undefined && this.ltPlayer.isHost)
+  private subscribeToPlayerEvents() {
+    Spicetify.Platform.PlayerAPI._cosmos.sub(
+      'sp://player/v2/main',
+      this.trackChangeHandler,
+    );
+  }
+
+  private trackChangeHandler = (data: any) => {
+    if (!data) return;
+
+    if (this.lastData?.track?.uri !== data?.track?.uri) {
+      console.log(data);
+      this.onTrackChanged.trigger(data?.track?.uri || '');
+    }
+
+    this.lastData = data;
+  };
+
+  private overridePlayerFunctions() {
+    Spicetify.Platform.PlayerAPI._events._emitter.emitSync =
+      this.emitSyncHandler;
+    Spicetify.Platform.PlayerAPI.play = this.playHandler(ogPlayerAPI.play);
+    Spicetify.Platform.PlayerAPI.pause = this.pauseHandler(ogPlayerAPI.pause);
+    Spicetify.Platform.PlayerAPI.resume = this.resumeHandler(
+      ogPlayerAPI.resume,
+    );
+    Spicetify.Platform.PlayerAPI.skipToNext = this.skipToNextHandler(
+      ogPlayerAPI.skipToNext,
+    );
+    Spicetify.Platform.PlayerAPI.seekTo = this.seekToHandler(
+      ogPlayerAPI.seekTo,
+    );
+    Spicetify.Platform.PlayerAPI.skipToPrevious = this.skipToPreviousHandler(
+      ogPlayerAPI.skipToPrevious,
+    );
+
+    if (ogPlayerAPI.setVolume)
+      Spicetify.Platform.PlayerAPI._volume.setVolume = this.setVolumeHandler;
+
+    Spicetify.Platform.History.listen(this.historyChangeHandler);
+  }
+
+  private emitSyncHandler = (e: any, t: any) => {
+    if (this.ltPlayer.client.connected && !this.ltPlayer.isHost) {
+      if (t?.action === 'play' && t?.options?.ltForced !== true) return;
+      if (t?.action === 'pause' && isTrackPaused()) return;
+      if (t?.action === 'resume' && !isTrackPaused()) return;
+    }
+    return ogPlayerAPI.emitSync(e, t);
+  };
+
+  private playHandler = (ogPlay: any) => {
+    return (uri: any, origins: any, options: any) => {
+      const command = new PlayCommand(this.ltPlayer, uri, origins, options);
+      this.restrictAccess(() => ogPlay(uri, origins, options), command);
+    };
+  };
+
+  private pauseHandler = (ogPause: any) => {
+    return () => {
+      const command = new PauseCommand(this.ltPlayer);
+      this.restrictAccess(ogPause, command);
+    };
+  };
+
+  private resumeHandler = (ogResume: any) => {
+    return () => {
+      const command = new ResumeCommand(this.ltPlayer);
+      this.restrictAccess(ogResume, command);
+    };
+  };
+
+  private skipToNextHandler = (ogSkipToNext: any) => {
+    return (e: any) => {
+      const command = new SkipToNextCommand(this.ltPlayer, e);
+      this.restrictAccess(ogSkipToNext, command);
+    };
+  };
+
+  private seekToHandler = (ogSkipTo: any) => {
+    return (milliseconds: number) => {
+      const command = new SeekToCommand(this.ltPlayer, milliseconds);
+      this.restrictAccess(ogSkipTo, command);
+    };
+  };
+
+  private skipToPreviousHandler = (ogSkipToPrevious: any) => {
+    return (e: any) => {
+      const command = new SkipToPreviousCommand(this.ltPlayer, e);
+      this.restrictAccess(ogSkipToPrevious, command);
+    };
+  };
+
+  private setVolumeHandler = (e: number) => {
+    if (!this.ltPlayer.client.connected || this.ltPlayer.canChangeVolume)
+      ogPlayerAPI.setVolume(e);
+  };
+
+  private historyChangeHandler = ({ pathname }: { pathname?: string }) => {
+    let pathParts = pathname?.split('/', 3).filter((i) => i);
+    if (
+      (pathParts?.length || 0) >= 2 &&
+      pathParts![0].toLowerCase() == 'listentogether'
     ) {
-      if (hostFunc) hostFunc();
-      else ogFunc();
+      this.ltPlayer.ui.joinAServerQuick(decodeURIComponent(pathParts![1]));
+      Spicetify.Platform.History.goBack();
+    }
+  };
+
+  private restrictAccess(ogFunc: any, command: Command) {
+    if (!this.ltPlayer.client.connected && !this.ltPlayer.client.connecting) {
+      console.log('Not connected');
+      ogFunc();
+    } else if (command.hasPermission()) {
+      console.log('Has permission');
+      command.execute(ogFunc);
     } else {
-      restrictCallback();
+      console.log('No permission');
+      command.specialAction();
     }
   }
 }
