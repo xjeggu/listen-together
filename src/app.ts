@@ -1,16 +1,17 @@
-import LTPlayer from './ltPlayer';
-
 async function main() {
   if (
     !Spicetify.CosmosAsync ||
     !Spicetify.Platform ||
-    !Spicetify.LocalStorage
+    !Spicetify.LocalStorage ||
+    !Spicetify.React
   ) {
     setTimeout(main, 1000);
     return;
   }
 
-  const ltPlayer = new LTPlayer();
+  // Lazy import because we have to wait for the API to load
+  const LTPlayer = await import('./ltPlayer');
+  const ltPlayer = new LTPlayer.default();
   const settings = ltPlayer.settingsManager.settings;
 
   if (

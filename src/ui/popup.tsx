@@ -15,7 +15,7 @@ const styles = {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '14px', // Add this line to introduce space between items
+    gap: '14px',
   } as React.CSSProperties,
   flexRow: {
     display: 'flex',
