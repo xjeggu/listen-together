@@ -1,6 +1,6 @@
 {
   "name": "spotify-listen-together",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "scripts": {
     "build": "spicetify-creator",
     "build-local": "spicetify-creator --out=dist --minify",
