@@ -1,9 +1,9 @@
 import Client from './client';
-import Patcher, { ogPlayerAPI } from './patcher';
-import SettingsManager from './settings';
+import Patcher, { ogPlayerAPI } from './utils/patcher';
+import SettingsManager from './utils/settings';
 import UI from './ui/ui';
 import pJson from '../package.json';
-import './spotifyUtils';
+import './utils/spotifyUtils';
 import {
   forcePlayTrack,
   getCurrentTrackUri,
@@ -15,7 +15,7 @@ import {
   resumeTrack,
   SpotifyUtils,
   TrackType,
-} from './spotifyUtils';
+} from './utils/spotifyUtils';
 
 const AD_CHECK_INTERVAL = 2000;
 export default class LTPlayer {
@@ -34,7 +34,9 @@ export default class LTPlayer {
   canChangeVolume = true;
   lastVolume: number | null = null;
 
-  constructor() {
+  constructor() {}
+
+  init() {
     this.patcher.patchAll();
     this.patcher.trackChanged.on((trackUri) => {
       this.onSongChanged(trackUri!);
@@ -48,6 +50,10 @@ export default class LTPlayer {
 
     // For testing
     (<any>Spicetify).OGFunctions = ogPlayerAPI;
+  }
+
+  unload() {
+    this.patcher.unpatchAll();
   }
 
   private resumeTrackIfAdPlaying() {
@@ -85,7 +91,36 @@ export default class LTPlayer {
     }
   }
 
-  // Received
+  addToQueue(items: Spicetify.ContextTrack[]) {
+    this.client.socket?.emit('addToQueue', items);
+  }
+
+  removeFromQueue(items: Spicetify.ContextTrack[]) {
+    this.client.socket?.emit('removeFromQueue', items);
+  }
+
+  clearQueue() {
+    this.client.socket?.emit('clearQueue');
+  }
+
+  // Server emitted events
+  onQueueUpdate(queue: Spicetify.ContextTrack[]) {
+    ogPlayerAPI.clearQueue();
+    ogPlayerAPI.addToQueue(queue);
+  }
+
+  onAddToQueue(items: Spicetify.ContextTrack[]) {
+    ogPlayerAPI.addToQueue(items);
+  }
+
+  onRemoveFromQueue(items: Spicetify.ContextTrack[]) {
+    ogPlayerAPI.removeFromQueue(items);
+  }
+
+  onClearQueue() {
+    ogPlayerAPI.clearQueue();
+  }
+
   onChangeSong(trackUri: string) {
     if (this.currentLoadingTrack === trackUri) {
       if (this.trackLoaded)

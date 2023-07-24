@@ -1,4 +1,4 @@
-import LTPlayer from './ltPlayer';
+import LTPlayer from '../ltPlayer';
 import { ogPlayerAPI } from './patcher';
 
 export enum TrackType {

@@ -97,7 +97,7 @@ export default class UI {
     );
   }
 
-  joinAServerQuick(address: string) {
+  quickConnect(address: string) {
     if (
       !this.ltPlayer.client.connected &&
       !this.ltPlayer.client.connecting &&

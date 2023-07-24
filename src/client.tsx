@@ -7,7 +7,7 @@ import {
   getCurrentTrackUri,
   getTrackType,
   isListenableTrackType,
-} from './spotifyUtils';
+} from './utils/spotifyUtils';
 
 export default class Client {
   connecting = false;
@@ -44,6 +44,10 @@ export default class Client {
 
     this.socket = io(server, {
       secure: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      timeout: 5000,
+      randomizationFactor: 0.5,
     });
 
     this.socket.on('connect', () => {
@@ -66,6 +70,9 @@ export default class Client {
           );
         },
       );
+
+      // Initialize ltPlayer (patching, etc.)
+      this.ltPlayer.init();
       this.ltPlayer.onLogin();
 
       // Try to request host if password is set
@@ -125,11 +132,26 @@ export default class Client {
       },
     );
 
+    // Synchronize the queue on join
+    this.socket.on('queueUpdate', (queue: Spicetify.ContextTrack[]) => {
+      console.dir(`Queue updated: ${queue || 'empty'}`, { depth: null });
+      this.ltPlayer.onQueueUpdate(queue);
+    });
+
+    this.socket.on('addToQueue', (items: Spicetify.ContextTrack[]) => {
+      this.ltPlayer.onAddToQueue(items);
+    });
+
+    this.socket.on('removeFromQueue', (items: Spicetify.ContextTrack[]) => {
+      this.ltPlayer.onRemoveFromQueue(items);
+    });
+
+    this.socket.on('clearQueue', () => {
+      this.ltPlayer.onClearQueue();
+    });
+
     this.socket.on('connect_error', () => {
-      setTimeout(() => {
-        console.log('Retrying to connect...');
-        this.connect(this.server);
-      }, 1000);
+      console.log('Connection error.');
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -154,6 +176,7 @@ export default class Client {
     this.connected = false;
     this.ltPlayer.isHost = false;
     this.connecting = false;
+    this.ltPlayer.unload();
     // this.ltPlayer.ui.menuItems.joinServer?.setName("Join a server")
     // this.ltPlayer.ui.menuItems.requestHost?.setName("Request host");
     this.ltPlayer.ui.renderBottomInfo(<BottomInfo server={''} />);

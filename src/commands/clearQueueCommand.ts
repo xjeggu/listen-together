@@ -1,12 +1,12 @@
 import { Command } from '../interfaces';
 import LTPlayer from '../ltPlayer';
 
-export class PauseCommand implements Command {
+export class ClearQueueCommand implements Command {
   constructor(private ltPlayer: LTPlayer) {}
 
-  execute(ogPause: Function) {
-    ogPause();
-    this.ltPlayer.requestUpdateSong(true, Spicetify.Player.getProgress());
+  execute(ogClearQueue: Function) {
+    //ogClearQueue();
+    this.ltPlayer.clearQueue();
   }
 
   hasPermission() {
@@ -14,7 +14,7 @@ export class PauseCommand implements Command {
   }
 
   notifyRestriction() {
-    Spicetify.showNotification('Only the hosts can pause songs!');
+    Spicetify.showNotification('Only the hosts can clear the queue!');
   }
 
   specialAction() {

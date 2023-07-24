@@ -13,7 +13,6 @@ async function main() {
   const ltPlayer = new LTPlayer();
   const settings = ltPlayer.settingsManager.settings;
 
-  console.log(settings);
   if (
     settings.autoConnect &&
     !ltPlayer.client.connected &&

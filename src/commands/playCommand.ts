@@ -1,18 +1,18 @@
 import { Command } from '../interfaces';
 import LTPlayer from '../ltPlayer';
-import { isListenableTrackType, getTrackType } from '../spotifyUtils';
+import { isListenableTrackType, getTrackType } from '../utils/spotifyUtils';
 
 export class PlayCommand implements Command {
   constructor(
     private ltPlayer: LTPlayer,
-    private uri: any,
-    private origins: any,
+    private uri: Spicetify.ContextTrack,
+    private context: any,
     private options: any,
   ) {}
 
   execute(ogPlay: Function) {
     this.ltPlayer.muteBeforePlay();
-    ogPlay(this.uri, this.origins, this.options);
+    ogPlay(this.uri, this.context, this.options);
   }
 
   hasPermission() {
