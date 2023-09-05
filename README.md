@@ -9,7 +9,7 @@ Spotify Listen Together is an extension for [Spicetify](https://spicetify.app/) 
 ### Manual Installation
 
 1. Download and install [Spicetify](https://spicetify.app/docs/getting-started/installation).
-2. Download [listenTogether.js](https://github.com/CoronaBringer/spotify-listen-together/releases/download/v0.5.0/listenTogether.js).
+2. Download [listenTogether.js](https://github.com/JanitorialMess/spotify-listen-together/releases/latest/download/listenTogether.js).
 3. Paste `listenTogether.js` in `%userprofile%\.spicetify\Extensions` (Find the folder `.spicetify` by doing `spicetify -c` in the CMD/Powershell).
 4. Run `spicetify config extensions listenTogether.js` and `spicetify apply`.
 
