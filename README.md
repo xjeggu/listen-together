@@ -20,9 +20,9 @@ Press the "Listen Together" button in the top left to open the extension's menu.
 ### Creating a Server
 
 To listen together with others, you must first create a server for everyone to join to.
-To get started, go to [Spotify Listen Together Server](https://github.com/CoronaBringer/spotify-listen-together-server) or host with Render.
+To get started, go to [Spotify Listen Together Server](https://github.com/JanitorialMess/spotify-listen-together-server) or host with Render.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/CoronaBringer/spotify-listen-together-server)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JanitorialMess/spotify-listen-together-server)
 
 ### Joining a Server
 
