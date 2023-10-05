@@ -9,7 +9,7 @@ Spotify Listen Together is an extension for [Spicetify](https://spicetify.app/) 
 ### Manual Installation
 
 1. Download and install [Spicetify](https://spicetify.app/docs/getting-started/installation).
-2. Download [listenTogether.js](https://github.com/CoronaBringer/spotify-listen-together/releases/download/v0.5.0/listenTogether.js).
+2. Download [listenTogether.js](https://github.com/JanitorialMess/spotify-listen-together/releases/download/v0.5.0/listenTogether.js).
 3. Paste `listenTogether.js` in `%userprofile%\.spicetify\Extensions` (Find the folder `.spicetify` by doing `spicetify -c` in the CMD/Powershell).
 4. Run `spicetify config extensions listenTogether.js` and `spicetify apply`.
 
@@ -20,9 +20,9 @@ Press the "Listen Together" button in the top left to open the extension's menu.
 ### Creating a Server
 
 To listen together with others, you must first create a server for everyone to join to.
-To get started, go to [Spotify Listen Together Server](https://github.com/CoronaBringer/spotify-listen-together-server) or host with Render.
+To get started, go to [Spotify Listen Together Server](https://github.com/JanitorialMess/spotify-listen-together-server) or host with Render.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/CoronaBringer/spotify-listen-together-server)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JanitorialMess/spotify-listen-together-server)
 
 ### Joining a Server
 
