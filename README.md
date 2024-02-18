@@ -1,6 +1,7 @@
 # Spotify Listen Together
 
-### This project is still in development and testing. Please keep this in mind!
+>[!WARNING]
+>This project is in development phase. I'm still learning, so things might break!
 
 Spotify Listen Together is an extension for [Spicetify](https://spicetify.app/) and an alternative solution to Spotify's Group Session.
 
