@@ -44,23 +44,29 @@ export default class Patcher {
 
   private setOGFunctions() {
     const methods = [
-      'play',
+//      'play',
       'pause',
-      'resume',
-      'seekTo',
-      'skipToNext',
-      'skipToPrevious',
-      'addToQueue',
-      'removeFromQueue',
-      'clearQueue',
+//      'resume',
+//      'seekTo',
+//      'skipToNext',
+//      'skipToPrevious',
     ];
 
     ogPlayerAPI = methods.reduce((obj: { [key: string]: any }, method) => {
-      obj[method] = Spicetify.Platform.PlayerAPI[method].bind(
-        Spicetify.Platform.PlayerAPI,
+      obj[method] = Spicetify.Player[method].bind(
+        Spicetify.Player,
       );
       return obj;
     }, {});
+
+    ogPlayerAPI.addToQueue = Spicetify.addToQueue;
+    ogPlayerAPI.removeFromQueue = Spicetify.removeFromQueue;
+    ogPlayerAPI.clearQueue = Spicetify.Platform.PlayerAPI.clearQueue;
+    ogPlayerAPI.seekTo = Spicetify.Platform.PlayerAPI.seekTo;
+    ogPlayerAPI.skipToNext = Spicetify.Player.next;
+    ogPlayerAPI.skipToPrevious = Spicetify.Player.back;
+    ogPlayerAPI.play = Spicetify.Player.playUri;
+    ogPlayerAPI.resume = Spicetify.Player.play;
 
     // Manual patching for nested functions
     ogPlayerAPI.emitSync =
